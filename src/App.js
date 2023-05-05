@@ -15,7 +15,17 @@ const App = () => {
 			title: '数据',
 			dataIndex: 'data',
 			key: 'data',
-		}
+		},
+		{
+			title: 'time_seq',
+			dataIndex: 'time',
+			key: 'time',
+		},
+		{
+			title: 'task_id',
+			dataIndex: 'task_id',
+			key: 'task_id',
+		},
 	];
 	let [dataSource, setDataSource] = useState({
 		list: [
@@ -63,13 +73,17 @@ const App = () => {
 				const list = dataSource;
 				let data = JSON.parse(event.payload);
 				list.list[data.index].data = data.data;
+				list.list[data.index].task_id = data.task_id;
+				let time_seq = new Date().toLocaleTimeString();
+				list.list[data.index].time =  time_seq;
 				setDataSource({ list: list.list });
-				//console.log(new Date().toLocaleTimeString(), data.task_id);
+				console.log(new Date().toLocaleTimeString(), data.task_id);
 				let index = `index_${data.index}`;
 				//const current_data = recordMap.data;
 				if (record_map[index] === undefined) {
 					record_map[index] = [];
 				}
+				data.time = time_seq;
 				record_map[index].push(data);
 				//speed_map[index].push(data);
 				// if(count <=5){
