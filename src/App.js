@@ -1,8 +1,9 @@
 import 'antd/dist/reset.css';
 import './App.css';
 import { Table, Modal } from 'antd';
-import { useState, useEffect, useRef, useMemo } from "react";
-import { listen,emit } from '@tauri-apps/api/event'
+import { useState, useEffect, useRef } from "react";
+import { listen } from '@tauri-apps/api/event'
+import { appWindow, } from '@tauri-apps/api/window'
 
 const App = () => {
 	const columns = [
@@ -39,37 +40,19 @@ const App = () => {
 	const [recordMap, setRecordMap] = useState({
 		map: {}
 	});
-	let unlistent = useRef(null);
-	// const add_listen = async () => {
-	// 	console.log("add_listen");
-	// 	const record_map = {};
-	// 	unlistent.current = await listen("fetch-data", (event) => {
-	// 		const list = dataSource;
-	// 		let data = JSON.parse(event.payload);
-	// 		list.list[data.index].data = data.data;
-	// 		setDataSource({ list: list.list });
-	// 		//console.log(new Date().toLocaleTimeString());
-	// 		let index = `index_${data.index}`;
-	// 		//const current_data = recordMap.data;
-	// 		if(record_map[index] === undefined){
-	// 			record_map[index] = [];
-	// 		}
-	// 		record_map[index].push(data);
-	// 		//speed_map[index].push(data);
-	// 		// if(count <=5){
-	// 		// 	console.log("data ==",speed_map);
-	// 		// }
-	// 		setRecordMap({data:record_map});
-	// 	});
-	// }
-	//console.log("update");
-	//add_listen();
+	const receive_ready = useRef(true);
 	useEffect(() => {
 		console.log("use effect");
+		//const record_map = {};
+		let unlistent_handler = null;
 		const add_listen = async () => {
-			const record_map = {};
+			//const record_map = {};
 			console.log("add_listen");
-			unlistent.current = await listen("fetch-data", (event) => {
+			return await listen("fetch-data", (event) => {
+				console.log("receive_ready ==== ",receive_ready.current);
+				if(!receive_ready.current){
+					return;
+				}
 				const list = dataSource;
 				let data = JSON.parse(event.payload);
 				list.list[data.index].data = data.data;
@@ -77,30 +60,38 @@ const App = () => {
 				let time_seq = new Date().toLocaleTimeString();
 				list.list[data.index].time =  time_seq;
 				setDataSource({ list: list.list });
-				console.log(new Date().toLocaleTimeString(), data.task_id);
+				//console.log(new Date().toLocaleTimeString(), data.task_id);
 				let index = `index_${data.index}`;
 				//const current_data = recordMap.data;
+				console.log(Math.random(),time_seq);
+				const record_map = recordMap.map;
 				if (record_map[index] === undefined) {
+					console.log("undefined in record_map");
 					record_map[index] = [];
 				}
 				data.time = time_seq;
 				record_map[index].push(data);
-				//speed_map[index].push(data);
-				// if(count <=5){
-				// 	console.log("data ==",speed_map);
-				// }
 				setRecordMap({ map: record_map });
-				//console.log(recordMap.map);
 			});
 		}
-		add_listen();
-		console.log("start");
-		emit("start");
-		console.log("start----");
-		return () => {
+		unlistent_handler = add_listen();
+		appWindow.emit('start');
+		return async () => {
+			receive_ready.current = false;
 			console.log("leave");
-			emit("cancel-all");
-			unlistent.current !== null && (unlistent.current)();
+			appWindow.emit("cancel-all");
+			let handler = await unlistent_handler;
+			console.log("unlistent====",handler);
+			await handler();
+			setRecordMap({map:{}});
+			setDataSource({list:[
+				{ index: 0, data: "" },
+				{ index: 1, data: "" },
+				{ index: 2, data: "" },
+				{ index: 3, data: "" },
+				{ index: 4, data: "" }
+			]});
+			receive_ready.current = true;
 		}
 	}, []);
 

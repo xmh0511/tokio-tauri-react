@@ -14,7 +14,7 @@ use tokio::task::JoinSet;
 async fn task_worker(window: Window, id: i32) {
 	println!("start task id {id}");
     let mut task = JoinSet::new();
-    for i in 0..1 {
+    for i in 0..5 {
         let window = window.clone();
         task.spawn(async move {
             loop {
@@ -34,7 +34,7 @@ async fn task_worker(window: Window, id: i32) {
 	while let Some(_) = task.join_next().await{
 
 	}
-    println!("task id {id} over");
+    //println!("task id {id} over");
 }
 fn main() {
     tauri::Builder::default()
@@ -46,7 +46,7 @@ fn main() {
 			let sender_vec = Arc::new(Mutex::new(Vec::<Sender<bool>>::new()));
 			let sender_vec_copy = sender_vec.clone();
             main_window.listen("cancel-all", move |_| {
-				println!("clear all");
+				//println!("clear all");
 				let sender_vec_copy = sender_vec_copy.clone();
 				std::thread::spawn(move ||{
 					let mut m: std::sync::MutexGuard<Vec<Sender<bool>>> = sender_vec_copy.lock().unwrap();
@@ -68,7 +68,7 @@ fn main() {
 					}
 					m_vec.clear();
 				});
-				println!("invoke clear other tasks running");
+				//println!("invoke clear other tasks running");
 				t.join().unwrap();
                 let main_window = main_window.clone();
                 let mut m = task_id.lock().unwrap();
@@ -84,12 +84,13 @@ fn main() {
 						.block_on(async move {
 							let r = tokio::spawn(task_worker(main_window.clone(), id));
 							while let Ok(_) = rx.recv(){
-								println!("task over {id}");
+								//println!("task over {id}");
 								r.abort();
 							}
 						});
 				});
             });
+			//for_register.unlisten(event_id);
             Ok(())
         })
         .run(tauri::generate_context!())
